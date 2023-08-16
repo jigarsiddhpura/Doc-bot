@@ -10,7 +10,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import CharacterTextSplitter
 
-load_dotenv('.env')
+load_dotenv()
 
 documents = []
 # Create a List of Documents from all of our files in the ./docs folder
@@ -38,7 +38,7 @@ vectordb.persist()
 
 # create our Q&A chain
 pdf_qa = ConversationalRetrievalChain.from_llm(
-    ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo'),
+    ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'),
     retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
     return_source_documents=True,
     verbose=False
@@ -59,7 +59,6 @@ while True:
         sys.exit()
     if query == '':
         continue
-    result = pdf_qa(
-        {"question": query, "chat_history": chat_history})
+    result = pdf_qa({"question": query, "chat_history": chat_history})
     print(f"{white}Answer: " + result["answer"])
     chat_history.append((query, result["answer"]))
