@@ -3,7 +3,7 @@ from langchain.llms import OpenAI
 from langchain.chains.question_answering import load_qa_chain
 from langchain.document_loaders import PyPDFLoader
 
-load_dotenv('.env')
+load_dotenv()
 
 pdf_loader = PyPDFLoader('./docs/RachelGreenCV.pdf')
 documents = pdf_loader.load()
