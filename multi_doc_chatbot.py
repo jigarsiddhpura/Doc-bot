@@ -1,44 +1,59 @@
-import os
-import sys
+import os, sys, time
 from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader,TextLoader,Docx2txtLoader
+from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import CharacterTextSplitter
-
-
+from langchain.memory import VectorStoreRetrieverMemory
 load_dotenv()
 
+def add_filename_to_file(filename, txtfile_path):
+    with open(txtfile_path,'a') as f:
+        f.write(filename+"\n")
+
+def inTxtfile(filename,txtfile_path):
+    with open(txtfile_path,'r') as f:
+        return filename in f.read().splitlines()
+    
+# EMBEDDED_FILES_PATH = os.path.join('EMBEDDED_FILE_NAMES.txt')
+
 def get_documents():
-    documents = []
+    docs = []
+    s = time.time()
     # Create a List of Documents from all of our files in the ./docs folder
     for file in os.listdir("docs"):
         if file.endswith(".pdf"):
             pdf_path = "./docs/" + file
-            loader = PyPDFLoader(pdf_path)
-            documents.extend(loader.load())
+            loader = PyPDFLoader(pdf_path) 
+            docs.extend(loader.load())
         elif file.endswith('.docx') or file.endswith('.doc'):
             doc_path = "./docs/" + file
             loader = Docx2txtLoader(doc_path)
-            documents.extend(loader.load())
+            docs.extend(loader.load())
         elif file.endswith('.txt'):
             text_path = "./docs/" + file
             loader = TextLoader(text_path)
-            documents.extend(loader.load())
+            docs.extend(loader.load())
+        elif file.endswith('.csv'):
+            csv_path = './docs/' + file
+            loader=CSVLoader(csv_path,'en',delimiter=',')
+            docs.extend(loader.load())
+    print(time.time()-s)
 
-    return documents
+    return docs
 
 documents = get_documents()
 
-def pdf_chain(documents):
+def pdf_chain(docs):
     # Split the documents into smaller chunks
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
-    documents = text_splitter.split_documents(documents)
+    documents = text_splitter.split_documents(docs)
 
     # Convert the document chunks to embedding and save them to the vector store
-    vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
+    vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data",)
     vectordb.persist()
 
     # create our Q&A chain

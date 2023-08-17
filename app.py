@@ -2,6 +2,7 @@ import streamlit as st
 import os, sys, time
 from dotenv import load_dotenv
 from langchain.document_loaders import PyPDFLoader,TextLoader,Docx2txtLoader
+from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.chat_models import ChatOpenAI
@@ -15,7 +16,6 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 
 st.subheader("Doc-Bot 🤖 ")
-st.write(OPENAI_API_KEY)
 
 chat_history = []
 
@@ -39,6 +39,10 @@ if OPENAI_API_KEY:
                 text_path = "./docs/" + file
                 loader = TextLoader(text_path)
                 documents.extend(loader.load())
+            elif file.endswith('.csv'):
+                csv_path = './docs/' + file
+                loader=CSVLoader(csv_path,'en',delimiter=',')
+                documents.extend(loader.load())
 
         return documents
     
@@ -57,7 +61,7 @@ if OPENAI_API_KEY:
             ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'),
             retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
             return_source_documents=True,
-            verbose=True
+            verbose=False
         )
         return pdf_qa
     
@@ -82,7 +86,6 @@ if OPENAI_API_KEY:
 
         if prompt := st.chat_input("What's up?"):
             st.session_state.messages.append({"role":"user", "content":prompt})
-            print(st.session_state)
             with st.chat_message("user"):
                 st.markdown(prompt)
 
@@ -103,9 +106,8 @@ if OPENAI_API_KEY:
 
             st.session_state.messages.append({"role":"assistant", "content":full_response})
 
-
     else:
-        st.info('Click on button below to initialize bot')
+        st.info('Initialize bot first!')
             
 
             
